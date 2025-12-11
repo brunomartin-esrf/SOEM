@@ -386,13 +386,13 @@ typedef struct ec_eniinitcmd
    /** Command */
    uint8 Cmd;
    /** Physical address */
-   uint16 Adp;
+   int16 Adp;
    /** Address offset */
-   uint16 Ado;
+   int16 Ado;
    /** timeout in us */
    int Timeout;
    /** size in bytes of parameter buffer */
-   int DataSize;
+   int16 DataSize;
    /** pointer to parameter buffer */
    void *Data;
 } ec_eniinitcmdt;

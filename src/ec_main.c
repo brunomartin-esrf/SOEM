@@ -1830,6 +1830,64 @@ int ecx_mbxENIinitcmds(ecx_contextt *context, uint16 slave, uint16_t transition)
    return 1;
 }
 
+/** Send InitCmds to a slave for a given transition.
+ * @param[in]  context    context struct
+ * @param[in]  slave      Slave number
+ * @param[in]  transition transition (ECT_ESMTRANS_*) for which to send commands
+ * @return 1 on success, 0 on failure
+ */
+int ecx_ENIinitcmds(ecx_contextt *context, uint16 slave, uint16_t transition)
+{
+   int slavecount = (context->ENI ? context->ENI->slavecount : 0);
+   int i, wkc;
+   ec_eniinitcmdt *cmd;
+
+   if (slavecount == 0)
+   {
+      return 1;
+   }
+
+   ec_enislavet *eni_slave = context->ENI->slave;
+
+   for (i = 0; i < (slavecount - 1); ++i, ++eni_slave)
+   {
+       if (slave <= eni_slave->Slave)
+       {
+          break;
+       }
+   }
+   if (slave == eni_slave->Slave)
+   {         
+       EC_PRINT("Apply ENI InitCmds for slave %d\n", slave);
+         
+       cmd = eni_slave->InitCmds;
+       for (i = 0; i < eni_slave->InitCmdCount; ++i, ++cmd)
+       {
+           if (cmd->Transition & transition)
+           {
+               wkc = 0;
+               switch (cmd->Cmd)
+               {
+               case EC_CMD_BWR:
+                  wkc = ecx_BWR(&context->port, cmd->Adp, cmd->Ado, cmd->DataSize, cmd->Data, cmd->Timeout);
+                  break;
+               case EC_CMD_BRD:
+                  wkc = ecx_BRD(&context->port, cmd->Adp, cmd->Ado, cmd->DataSize, cmd->Data, cmd->Timeout);
+                  break;
+               default:
+                  return 0;
+               }
+
+               if (wkc < 1)
+               {
+                  return 0;
+               }
+           }
+       }
+   }
+   return 1;
+}
+
 /** Dump complete EEPROM data from slave in buffer.
  * @param[in]  context  context struct
  * @param[in]  slave    Slave number
