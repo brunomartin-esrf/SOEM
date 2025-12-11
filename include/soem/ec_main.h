@@ -378,6 +378,25 @@ typedef struct ec_enicoecmd
    void *Data;
 } ec_enicoecmdt;
 
+/** ENI InitCmds command structure */
+typedef struct ec_eniinitcmd
+{
+   /** transition(s) during which command should be sent */
+   uint16 Transition;
+   /** Command */
+   uint8 Cmd;
+   /** Physical address */
+   uint16 Adp;
+   /** Address offset */
+   uint16 Ado;
+   /** timeout in us */
+   int Timeout;
+   /** size in bytes of parameter buffer */
+   int DataSize;
+   /** pointer to parameter buffer */
+   void *Data;
+} ec_eniinitcmdt;
+
 /** ENI slave structure */
 typedef struct ec_enislave
 {
@@ -387,6 +406,8 @@ typedef struct ec_enislave
    uint32 RevisionNo;
    ec_enicoecmdt *CoECmds;
    int CoECmdCount;
+   ec_eniinitcmdt *InitCmds;
+   int InitCmdCount;
 } ec_enislavet;
 
 /** ENI structure */

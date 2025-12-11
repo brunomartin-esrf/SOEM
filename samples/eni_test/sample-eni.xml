@@ -68,6 +68,41 @@
                </InitCmds>
             </CoE>
          </Mailbox>
+         <InitCmds>
+            <InitCmd>
+               <Transition>PS</Transition>
+               <Comment><![CDATA[set sm 0 (inputs)]]></Comment>
+               <Cmd>5</Cmd>
+               <Adp>1003</Adp>
+               <Ado>2048</Ado>
+               <Data>0010040020000100</Data>
+               <Cnt>1</Cnt>
+               <Retries>3</Retries>
+            </InitCmd>
+            <InitCmd>
+               <Transition>OS</Transition>
+               <Comment><![CDATA[set device state to SAFEOP]]></Comment>
+               <Requires>cycle</Requires>
+               <Cmd>5</Cmd>
+               <Adp>1003</Adp>
+               <Ado>288</Ado>
+               <Data>0400</Data>
+               <Retries>3</Retries>
+               <Timeout>200</Timeout>
+            </InitCmd>
+            <InitCmd>
+               <Transition>SP</Transition>
+               <Transition>SI</Transition>
+               <Transition>OP</Transition>
+               <Transition>OI</Transition>
+               <Comment><![CDATA[clear fmmu 0]]></Comment>
+               <Cmd>5</Cmd>
+               <Adp>1003</Adp>
+               <Ado>1536</Ado>
+               <Data>00000000000000000000000000000000</Data>
+               <Retries>3</Retries>
+            </InitCmd>
+         </InitCmds>
       </Slave>
       <Slave>
          <Info>
@@ -102,6 +137,30 @@
                </InitCmds>
             </CoE>
          </Mailbox>
+         <InitCmds>
+            <InitCmd>
+               <Transition>SP</Transition>
+               <Transition>SI</Transition>
+               <Transition>OP</Transition>
+               <Transition>OI</Transition>
+               <Comment><![CDATA[clear fmmu 0]]></Comment>
+               <Cmd>5</Cmd>
+               <Adp>1003</Adp>
+               <Ado>1536</Ado>
+               <Data>00000000000000000000000000000000</Data>
+               <Retries>3</Retries>
+            </InitCmd>
+            <InitCmd>
+               <Transition>II</Transition>
+               <Comment><![CDATA[assign EEPROM back to ECAT]]></Comment>
+               <Requires>cycle</Requires>
+               <Cmd>2</Cmd>
+               <Adp>65534</Adp>
+               <Ado>1280</Ado>
+               <Data>00</Data>
+               <Retries>3</Retries>
+            </InitCmd>
+         </InitCmds>
       </Slave>
    </Config>
 </EtherCATConfig>

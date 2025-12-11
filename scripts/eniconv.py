@@ -100,13 +100,28 @@ def parseCoEInitCmd(element):
 def parseCoEInitCmds(elements):
    return [parseCoEInitCmd(e) for e in elements if getOptText(e, "Disabled") != "1"]
 
+def parseInitCmd(element):
+   return {
+         "Comment": getOptText(element, "Comment"),
+         "Transition": [t.text for t in getElements(element, "Transition")],
+         "Cmd": (0xffff & getInt(element, "Cmd")),
+         "Adp": (0xffff & getInt(element, "Adp")),
+         "Ado": (0xffff & getInt(element, "Ado")),
+         "Timeout": int(1000 * getOptInt(element, "Timeout", -1e-3)),
+         "Data": list(bytearray.fromhex(getOptText(element, "Data")))
+         }
+
+def parseInitCmds(elements):
+   return [parseInitCmd(e) for e in elements]
+
 def parseSlave(element, slave):
    return {
          "Slave": (0xffff & (1 - getOptInt(element, "Info/AutoIncAddr", (1 - slave)))),
          "VendorId": (0xffffffff & getInt(element, "Info/VendorId")),
          "ProductCode": (0xffffffff & getInt(element, "Info/ProductCode")),
          "RevisionNo": (0xffffffff & getInt(element, "Info/RevisionNo")),
-         "CoECmds": parseCoEInitCmds(getElements(element, "Mailbox/CoE/InitCmds/InitCmd"))
+         "CoECmds": parseCoEInitCmds(getElements(element, "Mailbox/CoE/InitCmds/InitCmd")),
+         "InitCmds": parseInitCmds(getElements(element, "InitCmds/InitCmd"))
          }
 
 def parseSlaves(element):
@@ -124,8 +139,8 @@ def genTransition(transitions):
       return f"({' | '.join(tt)})"
    return tt[0]
 
-def genCoEData(cg, slave, cmds):
-   cName = f"s{slave}_coeData"
+def genCoEData(cg, slave, cmds, suffix = '_coeData'):
+   cName = f"s{slave}{suffix}"
    size = sum(len(c["Data"]) for c in cmds)
    if size > 0:
       cg.open(f"static uint8 {cName}[{size}]")
@@ -167,9 +182,31 @@ def genCoECmds(cg, slave, cmds):
       cg.close()
    return (noCoeCmds, cName)
 
+def genInitCmds(cg, slave, cmds):
+   noInitCmds = len(cmds)
+   if noInitCmds == 0:
+      cName = "NULL"
+   else:
+      cName = f"s{slave}_initCmds"
+      cmdData = genCoEData(cg, slave, cmds, '_initData')
+      cg.open(f"static ec_eniinitcmdt {cName}[{noInitCmds}]")
+      for c, (DataSize, Data) in zip(cmds, cmdData):
+         cg.open()
+         if c["Comment"]:
+            cg.comment(c["Comment"])
+         cg.line(f".Transition = {genTransition(c['Transition'])}")
+         for f in ["Cmd", "Adp", "Ado", "Timeout"]:
+            cg.line(f".{f} = {c[f]}")
+         cg.line(f".DataSize = {DataSize}")
+         cg.line(f".Data = {Data}")
+         cg.close()
+      cg.close()
+   return (noInitCmds, cName)
+
 def genSlaves(cg, slaves):
    coeList = [genCoECmds(cg, s["Slave"], s["CoECmds"]) for s in slaves]
-   noSlaves = sum(n > 0 for n, _ in coeList)
+   initCmdList = [genInitCmds(cg, s["Slave"], s["InitCmds"]) for s in slaves]
+   noSlaves = sum(n > 0 for n, _ in [*coeList, *initCmdList])
    if noSlaves == 0:
       cName = "NULL"
    else:
